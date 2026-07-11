@@ -45,7 +45,8 @@ export function useLiveLocationTracker() {
         trackingToken = data.token;
       }
 
-      socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
+      const socketUrl = import.meta.env.VITE_API_URL || 'https://safe-track-jaf5.onrender.com';
+      socketRef.current = io(socketUrl, {
         auth: { token: trackingToken }
       });
 

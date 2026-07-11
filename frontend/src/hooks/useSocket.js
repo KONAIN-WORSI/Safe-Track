@@ -13,7 +13,8 @@ export function useSocket() {
   useEffect(() => {
     if (!token) return;
 
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
+    const socketUrl = import.meta.env.VITE_API_URL || 'https://safe-track-jaf5.onrender.com';
+    const socket = io(socketUrl, {
       auth: { token }
     });
 

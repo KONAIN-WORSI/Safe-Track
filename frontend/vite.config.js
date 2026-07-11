@@ -6,7 +6,11 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': { target: 'http://localhost:3001', changeOrigin: true }
+      '/api': {
+        target: 'https://safe-track-jaf5.onrender.com',
+        changeOrigin: true,
+        secure: true
+      }
     }
   }
 });
