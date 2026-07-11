@@ -20,19 +20,39 @@ const app = express();
 const server = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://safe-track-fawn.vercel.app/'
+  'https://safe-track-fawn.vercel.app'
 ];
 if (process.env.FRONTEND_URL) {
   const envOrigins = process.env.FRONTEND_URL.split(',').map(o => o.trim());
   allowedOrigins.push(...envOrigins);
 }
 
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    // Normalize: remove trailing slash
+    const normalizedOrigin = origin.replace(/\/$/, '');
+    
+    const isAllowed = allowedOrigins.some(allowed => allowed.replace(/\/$/, '') === normalizedOrigin)
+      || normalizedOrigin.endsWith('.vercel.app');
+      
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
+};
+
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ['GET', 'POST'], credentials: true }
+  cors: corsOptions
 });
 
 app.use(helmet());
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
