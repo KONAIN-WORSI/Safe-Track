@@ -1,15 +1,5 @@
 {
-  "projectRoot": "d:/safetrack",
-  "frontend": {
-    "root": "d:/safetrack/frontend",
-    "entry": "d:/safetrack/frontend/index.html"
-  },
-  "backend": {
-    "root": "d:/safetrack/backend",
-    "start": "d:/safetrack/backend/server.js"
-  },
-  "docker": {
-    "compose": "d:/safetrack/docker-compose.yml"
-  }
+  "rewrites":[
+    {"source": "/(.*)", "destination":"/"}
+  ]
 }
-
