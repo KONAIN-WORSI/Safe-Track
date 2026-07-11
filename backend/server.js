@@ -20,7 +20,7 @@ const app = express();
 const server = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://safe-track-be3y7zxg7-konainworsi-6452s-projects.vercel.app'
+  'https://safe-track-fawn.vercel.app/'
 ];
 if (process.env.FRONTEND_URL) {
   const envOrigins = process.env.FRONTEND_URL.split(',').map(o => o.trim());
