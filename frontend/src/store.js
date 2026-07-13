@@ -114,7 +114,7 @@ export const useTrackerStore = create((set, get) => ({
       liveLocations: { ...s.liveLocations, [trackedUserId]: locationData },
       trackedUsers: s.trackedUsers.map(u =>
         u._id === trackedUserId
-          ? { ...u, lastLocation: { ...locationData.location, timestamp: locationData.location.timestamp }, isTracking: true, inSafeZone: locationData.inSafeZone }
+          ? { ...u, lastLocation: { lat: locationData.location.lat, lng: locationData.location.lng, accuracy: locationData.location.accuracy, timestamp: locationData.location.timestamp }, isTracking: true, inSafeZone: locationData.inSafeZone }
           : u
       )
     }));

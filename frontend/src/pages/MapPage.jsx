@@ -89,7 +89,7 @@ export default function MapPage() {
           .bindPopup(`<b>${user.name}</b>`);
       }
     });
-  }, [liveLocations]);
+  }, [liveLocations, trackedUsers]);
 
 
   const { location, status } = useGeolocation({
