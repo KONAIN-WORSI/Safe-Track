@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { api, useAuthStore } from '../store';
+import { queueLocation, getQueuedLocations, getQueueCount, clearQueue } from '../utils/locationQueue';
 
 export function useLiveLocationTracker() {
   const token = useAuthStore(s => s.token);
@@ -8,10 +9,85 @@ export function useLiveLocationTracker() {
   const watchIdRef = useRef(null);
   const trackedUserIdRef = useRef(null);
   const trackingTokenRef = useRef(null);
+  const isOnlineRef = useRef(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isActive, setIsActive] = useState(false);
   const [status, setStatus] = useState('idle');
+  const [queueCount, setQueueCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
-  const startGeolocation = useCallback((trackedUserId) => {
+  // Update online status
+  useEffect(() => {
+    const goOnline = () => { isOnlineRef.current = true; setIsOnline(true); };
+    const goOffline = () => { isOnlineRef.current = false; setIsOnline(false); };
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+  const updateQueueCount = useCallback(async () => {
+    try {
+      const count = await getQueueCount();
+      setQueueCount(count);
+    } catch {}
+  }, []);
+
+  const replayQueue = useCallback(async (socket) => {
+    if (!socket?.connected) return;
+    try {
+      const queued = await getQueuedLocations();
+      if (queued.length === 0) return;
+
+      setStatus('syncing');
+      let sent = 0;
+
+      for (const ping of queued) {
+        if (!socket.connected) break;
+        const payload = {
+          trackedUserId: ping.trackedUserId,
+          lat: ping.lat,
+          lng: ping.lng,
+          accuracy: ping.accuracy,
+          speed: ping.speed,
+          heading: ping.heading,
+          altitude: ping.altitude
+        };
+        socket.emit('location:ping', payload);
+        sent++;
+        // Small delay between replays to avoid flooding
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      // Clear only the pings we successfully sent
+      if (sent === queued.length) {
+        await clearQueue();
+      }
+      await updateQueueCount();
+      setStatus('tracking');
+    } catch (err) {
+      console.error('Queue replay failed:', err);
+    }
+  }, [updateQueueCount]);
+
+  const sendPing = useCallback(async (socket, payload) => {
+    if (socket?.connected) {
+      socket.emit('location:ping', payload);
+      setStatus('tracking');
+    } else {
+      // Store in IndexedDB for offline replay
+      try {
+        await queueLocation(payload);
+        await updateQueueCount();
+        setStatus('offline-queueing');
+      } catch (err) {
+        console.error('Failed to queue location:', err);
+      }
+    }
+  }, [updateQueueCount]);
+
+  const startGeolocation = useCallback((trackedUserId, socket) => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
 
     if (watchIdRef.current !== null) {
@@ -27,13 +103,10 @@ export function useLiveLocationTracker() {
           accuracy: position.coords.accuracy,
           speed: position.coords.speed,
           heading: position.coords.heading,
-          altitude: position.coords.altitude
+          altitude: position.coords.altitude,
+          timestamp: new Date().toISOString()
         };
-
-        if (socketRef.current?.connected) {
-          socketRef.current.emit('location:ping', payload);
-          setStatus('tracking');
-        }
+        sendPing(socket, payload);
       },
       (error) => {
         console.error('Geolocation error', error);
@@ -41,7 +114,7 @@ export function useLiveLocationTracker() {
       },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
     );
-  }, []);
+  }, [sendPing]);
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
@@ -57,12 +130,11 @@ export function useLiveLocationTracker() {
     trackingTokenRef.current = null;
     setIsActive(false);
     setStatus('stopped');
+    setQueueCount(0);
   }, []);
 
   useEffect(() => {
-    return () => {
-      stopTracking();
-    };
+    return () => { stopTracking(); };
   }, [stopTracking]);
 
   const startTracking = useCallback(async (trackedUserId, providedToken = null) => {
@@ -92,10 +164,13 @@ export function useLiveLocationTracker() {
 
       socketRef.current = socket;
 
-      socket.on('connect', () => {
+      socket.on('connect', async () => {
         console.log('Socket connected');
         setStatus('connected');
-        startGeolocation(trackedUserId);
+        // Replay any queued offline pings
+        await replayQueue(socket);
+        // Start geolocation after replay
+        startGeolocation(trackedUserId, socket);
       });
 
       socket.on('disconnect', (reason) => {
@@ -108,10 +183,11 @@ export function useLiveLocationTracker() {
         setStatus('reconnecting');
       });
 
-      socket.on('reconnect', () => {
+      socket.on('reconnect', async () => {
         console.log('Socket reconnected');
         setStatus('connected');
-        startGeolocation(trackedUserId);
+        await replayQueue(socket);
+        startGeolocation(trackedUserId, socket);
       });
 
       socket.on('reconnect_failed', () => {
@@ -128,6 +204,12 @@ export function useLiveLocationTracker() {
         }
       });
 
+      // If already offline, start geolocation immediately (will queue pings)
+      if (!navigator.onLine) {
+        startGeolocation(trackedUserId, socket);
+      }
+
+      await updateQueueCount();
       return true;
     } catch (error) {
       console.error('Tracking token request failed', error);
@@ -135,7 +217,7 @@ export function useLiveLocationTracker() {
       setStatus('error');
       return false;
     }
-  }, [stopTracking, startGeolocation]);
+  }, [stopTracking, startGeolocation, replayQueue, updateQueueCount]);
 
-  return { isActive, status, startTracking, stopTracking };
+  return { isActive, status, startTracking, stopTracking, queueCount, isOnline };
 }

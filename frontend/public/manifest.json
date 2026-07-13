@@ -1,0 +1,17 @@
+{
+  "name": "SafeTrack - Share Location",
+  "short_name": "SafeTrack",
+  "description": "Share your real-time location with your guardian",
+  "start_url": "/device",
+  "display": "standalone",
+  "background_color": "#f5f8fc",
+  "theme_color": "#185FA5",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
