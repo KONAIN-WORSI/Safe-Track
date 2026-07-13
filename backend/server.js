@@ -18,6 +18,8 @@ const { handleSocketConnection } = require('./socket/locationSocket');
 
 const app = express();
 const server = http.createServer(app);
+
+app.set('trust proxy', 1);
 const allowedOrigins = [
   'http://localhost:5173',
   'https://safe-track-fawn.vercel.app'
