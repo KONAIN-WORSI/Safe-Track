@@ -15,14 +15,19 @@ export function useSocket() {
 
     const socketUrl = import.meta.env.VITE_API_URL || 'https://safe-track-jaf5.onrender.com';
     const socket = io(socketUrl, {
-      auth: { token }
+      auth: { token },
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000
     });
 
     socketRef.current = socket;
     socketInstance = socket;
 
     socket.on('connect', () => console.log('Socket connected'));
-    socket.on('disconnect', () => console.log('Socket disconnected'));
+    socket.on('disconnect', (reason) => console.log('Socket disconnected:', reason));
+    socket.on('reconnect', () => console.log('Socket reconnected'));
 
     socket.on('location:update', (data) => {
       updateLiveLocation(data.trackedUserId, data);
@@ -30,7 +35,7 @@ export function useSocket() {
 
     socket.on('alert:new', (alert) => {
       pushAlert(alert);
-      if (Notification.permission === 'granted') {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification('SafeTrack Alert', {
           body: alert.message,
           icon: '/favicon.ico'
@@ -40,12 +45,16 @@ export function useSocket() {
 
     socket.on('alert:sos', (alert) => {
       pushAlert({ ...alert, severity: 'critical' });
-      if (Notification.permission === 'granted') {
-        new Notification('🆘 SOS ALERT', { body: alert.message });
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new Notification('SOS ALERT', { body: alert.message });
       }
     });
 
-    return () => { socket.disconnect(); socketInstance = null; };
+    return () => {
+      socket.removeAllListeners();
+      socket.disconnect();
+      socketInstance = null;
+    };
   }, [token]);
 
   return socketRef;

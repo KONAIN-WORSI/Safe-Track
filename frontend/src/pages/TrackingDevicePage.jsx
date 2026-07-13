@@ -52,6 +52,8 @@ export default function TrackingDevicePage() {
     if (!token) return 'No tracking link was provided.';
     if (status === 'tracking') return 'Your location is being shared live.';
     if (status === 'connected') return 'Connected to SafeTrack. Waiting for GPS updates.';
+    if (status === 'disconnected') return 'Connection lost. Attempting to reconnect...';
+    if (status === 'reconnecting') return 'Reconnecting to SafeTrack...';
     if (status === 'requesting-token') return 'Preparing secure location sharing...';
     if (status === 'error') return 'Location sharing could not start. Please allow location access.';
     return 'Ready to share your location.';

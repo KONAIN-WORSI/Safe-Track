@@ -125,6 +125,13 @@ function handleSocketConnection(io) {
 
     socket.on('disconnect', async () => {
       console.log(`${isTrackingClient ? 'Tracked device' : 'Guardian'} disconnected: ${authUser.id}`);
+      if (isTrackingClient) {
+        try {
+          await TrackedUser.findByIdAndUpdate(authUser.id, { isTracking: false });
+        } catch (err) {
+          console.error('Failed to reset isTracking:', err.message);
+        }
+      }
     });
   });
 }
