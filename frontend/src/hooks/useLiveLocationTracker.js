@@ -135,7 +135,7 @@ export function useLiveLocationTracker() {
       setStatus('error');
       return false;
     }
-  }, [stopTracking, token, startGeolocation]);
+  }, [stopTracking, startGeolocation]);
 
   return { isActive, status, startTracking, stopTracking };
 }

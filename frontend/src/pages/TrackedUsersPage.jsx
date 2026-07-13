@@ -95,8 +95,8 @@ export default function TrackedUsersPage() {
     try {
       const { data } = await api.post(`/auth/tracking-token/${id}`);
       const link = `${window.location.origin}/device?token=${encodeURIComponent(data.token)}`;
-      window.open(link, '_blank', 'noopener,noreferrer');
-      alert(`Opened the device-sharing page for ${name}. Ask the child to open it and tap Start sharing location.`);
+      await navigator.clipboard.writeText(link);
+      alert(`Link copied to clipboard!\n\nShare it with ${name} via WhatsApp, SMS, or any messaging app.\n\nThe child should open it on their phone and tap "Start sharing location".`);
     } catch (err) {
       alert(err.response?.data?.error || 'Could not create tracking link');
     }

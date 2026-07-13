@@ -39,7 +39,7 @@ export default function TrackingDevicePage() {
 
       requestLocation();
     }
-  }, [startTracking]);
+  }, []);
 
   useEffect(() => () => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
