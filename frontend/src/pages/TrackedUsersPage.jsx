@@ -182,10 +182,10 @@ export default function TrackedUsersPage() {
               {u.consentGiven && (
                 <>
                   <button style={{ ...s.btn('secondary'), padding: '6px 12px' }} onClick={() => handleShareTrackingLink(u._id, u.name)}>
-                    Share device link
+                    Copy device link
                   </button>
                   <button style={{ ...s.btn(isActive && status === 'tracking' ? 'primary' : 'secondary'), padding: '6px 12px' }} onClick={() => isActive ? stopTracking() : startTracking(u._id)}>
-                    {isActive ? 'Stop live tracking' : 'Start live tracking'}
+                    {isActive ? 'Stop simulating' : 'Simulate tracking'}
                   </button>
                 </>
               )}
@@ -194,6 +194,12 @@ export default function TrackedUsersPage() {
               )}
               <button style={{ ...s.btn('secondary'), marginLeft: 'auto', color: '#A32D2D', borderColor: '#A32D2D' }} onClick={() => handleDelete(u._id, u.name)}>Delete</button>
             </div>
+            {u.consentGiven && (
+              <div style={{ fontSize: 11, color: '#aaa', marginTop: 8, lineHeight: 1.5 }}>
+                <b>Copy device link</b> — send to the child's phone via WhatsApp/SMS. The child opens it on their phone and taps "Start sharing location".<br/>
+                <b>Simulate tracking</b> — uses this browser's GPS for testing. No second device needed.
+              </div>
+            )}
           </div>
         ))}
       </div>

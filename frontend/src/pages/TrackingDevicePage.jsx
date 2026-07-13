@@ -72,6 +72,12 @@ export default function TrackingDevicePage() {
           Open this page on the child's phone to send the real GPS location to the guardian dashboard. Works even without internet — locations are stored locally and sent when connection returns.
         </div>
 
+        {token && (
+          <div style={{ padding: '8px 12px', borderRadius: 8, background: '#FAEEDA', color: '#854F0B', fontSize: 12, marginBottom: 16, lineHeight: 1.5 }}>
+            This page tracks the device it is opened on. If you are the guardian testing this, go back to the dashboard and use <b>"Simulate tracking"</b> instead.
+          </div>
+        )}
+
         <button style={s.btn(isActive)} onClick={() => (isActive ? stopTracking() : startTracking(null, token))}>
           {isActive ? 'Stop sharing location' : 'Start sharing location'}
         </button>

@@ -28,7 +28,7 @@ function handleSocketConnection(io) {
 
     socket.on('location:ping', async (data) => {
       try {
-        const { trackedUserId: incomingTrackedUserId, lat, lng, accuracy, speed, heading, altitude } = data;
+        const { trackedUserId: incomingTrackedUserId, lat, lng, accuracy, speed, heading, altitude, timestamp } = data;
         const resolvedTrackedUserId = incomingTrackedUserId || trackedUserId;
 
         if (!resolvedTrackedUserId) {
@@ -60,11 +60,12 @@ function handleSocketConnection(io) {
           trackedUser: resolvedTrackedUserId,
           guardian: trackedUser.guardian,
           lat, lng, accuracy, speed, heading, altitude,
-          inSafeZone, safeZoneName
+          inSafeZone, safeZoneName,
+          timestamp: timestamp ? new Date(timestamp) : new Date()
         });
 
         await TrackedUser.findByIdAndUpdate(resolvedTrackedUserId, {
-          lastLocation: { lat, lng, accuracy, timestamp: new Date() },
+          lastLocation: { lat, lng, accuracy, timestamp: timestamp ? new Date(timestamp) : new Date() },
           isTracking: true
         });
 

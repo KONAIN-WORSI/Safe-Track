@@ -3,7 +3,6 @@ import { useTrackerStore } from '../store';
 import { formatTime, formatCoords, haversine } from '../utils/helpers';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { getSocket } from '../hooks/useSocket';
-import { api } from '../store';
 
 const s = {
   heading: { fontSize: 22, fontWeight: 500, marginBottom: 4 },
@@ -102,9 +101,6 @@ export default function MapPage() {
           trackedUserId: selectedUser._id,
           ...loc
         });
-        try {
-          await api.post(`/locations/${selectedUser._id}`, loc);
-        } catch {}
       }
     }
   });
