@@ -59,7 +59,7 @@ export default function SettingsPage() {
         </div>
         <div style={s.field}>
           <label style={s.label}>Email</label>
-          <input style={s.input} value={user?.email || ''} disabled style={{ ...s.input, opacity: 0.6 }} />
+          <input style={{ ...s.input, opacity: 0.6 }} value={user?.email || ''} disabled />
         </div>
         <div style={s.field}>
           <label style={s.label}>Phone (for SMS alerts)</label>

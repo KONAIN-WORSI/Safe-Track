@@ -19,7 +19,6 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "libphonenumber-js": "^1.12.41",
-    "mongodb-memory-server": "^11.0.1",
     "mongoose": "^8.4.0",
     "nodemailer": "^6.9.13",
     "socket.io": "^4.7.5",
@@ -27,6 +26,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "mongodb-memory-server": "^11.0.1",
     "nodemon": "^3.1.3"
   }
 }

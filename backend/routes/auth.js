@@ -48,6 +48,26 @@ router.get('/me', authenticateToken, (req, res) => {
   res.json({ user: req.user });
 });
 
+// PATCH /api/auth/me
+router.patch('/me', authenticateToken, async (req, res) => {
+  try {
+    const updates = {};
+    if (req.body.name) updates.name = req.body.name;
+    if (req.body.phone !== undefined) updates.phone = req.body.phone;
+    if (req.body.alertPreferences) updates.alertPreferences = req.body.alertPreferences;
+
+    const guardian = await Guardian.findByIdAndUpdate(
+      req.user._id,
+      updates,
+      { new: true, runValidators: true }
+    );
+    if (!guardian) return res.status(404).json({ error: 'User not found' });
+    res.json({ user: guardian });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/auth/tracking-token/:trackedUserId
 router.post('/tracking-token/:trackedUserId', authenticateToken, async (req, res) => {
   try {

@@ -45,7 +45,7 @@ router.post('/trace-live/:userId', async (req, res) => {
     lng += (Math.random() - 0.5) * 0.05;
 
     let inSafeZone = true; let safeZoneName = null;
-    for (const zone of user.safeList || user.safeZones) {
+    for (const zone of user.safeZones) {
       const dist = haversine(lat, lng, zone.lat, zone.lng);
       if (dist <= zone.radius) { safeZoneName = zone.name; break; }
       inSafeZone = false;

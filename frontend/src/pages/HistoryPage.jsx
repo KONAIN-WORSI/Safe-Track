@@ -41,9 +41,21 @@ export default function HistoryPage() {
 
   useEffect(() => { if (selectedId) fetchHistory(); }, [selectedId, liveLocations[selectedId]]);
 
-  const exportCSV = () => {
+  const exportCSV = async () => {
     const user = trackedUsers.find(u => u._id === selectedId);
-    window.open(`/api/locations/${selectedId}/export/csv`, '_blank');
+    try {
+      const response = await api.get(`/locations/${selectedId}/export/csv`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `locations_${user?.name || 'user'}_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('CSV export failed:', err);
+    }
   };
 
   const exportJSON = () => {

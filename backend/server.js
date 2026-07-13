@@ -34,8 +34,7 @@ const corsOptions = {
     // Normalize: remove trailing slash
     const normalizedOrigin = origin.replace(/\/$/, '');
     
-    const isAllowed = allowedOrigins.some(allowed => allowed.replace(/\/$/, '') === normalizedOrigin)
-      || normalizedOrigin.endsWith('.vercel.app');
+    const isAllowed = allowedOrigins.some(allowed => allowed.replace(/\/$/, '') === normalizedOrigin);
       
     if (isAllowed) {
       callback(null, true);
@@ -60,17 +59,11 @@ app.use('/api/', limiter);
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/safetrack')
   .then(() => console.log('MongoDB connected'))
-  .catch(async err => {
-    console.error(`MongoDB connection failed (${err.message}). Attempting fallback to in-memory DB...`);
-    try {
-      const { MongoMemoryServer } = require('mongodb-memory-server');
-      const mongoServer = await MongoMemoryServer.create();
-      const mongoUri = mongoServer.getUri();
-      await mongoose.connect(mongoUri);
-      console.log(`Successfully connected to fallback in-memory MongoDB at ${mongoUri}`);
-    } catch (memoryErr) {
-      console.error('Fallback in-memory MongoDB failed to start:', memoryErr);
-    }
+  .catch(err => {
+    console.error(`MongoDB connection failed: ${err.message}`);
+    console.error('Set MONGODB_URI environment variable to a valid MongoDB connection string.');
+    console.error('For production, use MongoDB Atlas: https://www.mongodb.com/atlas');
+    process.exit(1);
   });
 
 app.use('/api/auth', authRoutes);
@@ -79,6 +72,8 @@ app.use('/api/locations', authenticateToken, locationRoutes);
 app.use('/api/alerts', authenticateToken, alertRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
+
+app.get('/', (req, res) => res.json({ status: 'ok', service: 'safetrack-backend', time: new Date() }));
 
 io.use((socket, next) => {
   const token = extractToken(socket);
