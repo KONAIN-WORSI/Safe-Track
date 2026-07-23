@@ -24,6 +24,8 @@ const trackedUserSchema = new mongoose.Schema({
     accuracy: Number,
     timestamp: Date
   },
+  inSafeZone: { type: Boolean, default: true },
+  safeZoneName: { type: String, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -80,7 +80,20 @@ export const useTrackerStore = create((set, get) => ({
     set({ loadingUsers: true });
     try {
       const { data } = await api.get('/users');
-      set({ trackedUsers: data, loadingUsers: false });
+      set(s => {
+        const liveLocations = { ...s.liveLocations };
+        for (const u of data) {
+          if (u.lastLocation?.lat != null && u.lastLocation?.lng != null) {
+            liveLocations[u._id] = {
+              trackedUserId: u._id,
+              location: { lat: u.lastLocation.lat, lng: u.lastLocation.lng, accuracy: u.lastLocation.accuracy, timestamp: u.lastLocation.timestamp },
+              inSafeZone: u.inSafeZone,
+              safeZoneName: u.safeZoneName
+            };
+          }
+        }
+        return { trackedUsers: data, liveLocations, loadingUsers: false };
+      });
     } catch { set({ loadingUsers: false }); }
   },
 

@@ -66,7 +66,9 @@ function handleSocketConnection(io) {
 
         await TrackedUser.findByIdAndUpdate(resolvedTrackedUserId, {
           lastLocation: { lat, lng, accuracy, timestamp: timestamp ? new Date(timestamp) : new Date() },
-          isTracking: true
+          isTracking: true,
+          inSafeZone,
+          safeZoneName
         });
 
         io.to(`guardian:${trackedUser.guardian}`).emit('location:update', {

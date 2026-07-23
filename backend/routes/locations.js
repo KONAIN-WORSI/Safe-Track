@@ -59,7 +59,9 @@ router.post('/trace-live/:userId', async (req, res) => {
     });
 
     await TrackedUser.findByIdAndUpdate(user._id, {
-      lastLocation: { lat, lng, accuracy: 2500, timestamp: new Date() }
+      lastLocation: { lat, lng, accuracy: 2500, timestamp: new Date() },
+      inSafeZone,
+      safeZoneName
     });
 
     res.status(200).json({ location, inSafeZone, safeZoneName, telecomInfo: { country: countryCode } });
@@ -113,7 +115,9 @@ router.post('/:userId', async (req, res) => {
     });
 
     await TrackedUser.findByIdAndUpdate(user._id, {
-      lastLocation: { lat, lng, accuracy, timestamp: new Date() }
+      lastLocation: { lat, lng, accuracy, timestamp: new Date() },
+      inSafeZone,
+      safeZoneName
     });
 
     res.status(201).json({ location, inSafeZone, safeZoneName });

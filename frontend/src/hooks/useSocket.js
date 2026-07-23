@@ -8,6 +8,7 @@ export function useSocket() {
   const token = useAuthStore(s => s.token);
   const updateLiveLocation = useTrackerStore(s => s.updateLiveLocation);
   const pushAlert = useTrackerStore(s => s.pushAlert);
+  const fetchUsers = useTrackerStore(s => s.fetchUsers);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -25,9 +26,15 @@ export function useSocket() {
     socketRef.current = socket;
     socketInstance = socket;
 
-    socket.on('connect', () => console.log('Socket connected'));
+    socket.on('connect', () => {
+      console.log('Socket connected');
+      fetchUsers();
+    });
     socket.on('disconnect', (reason) => console.log('Socket disconnected:', reason));
-    socket.on('reconnect', () => console.log('Socket reconnected'));
+    socket.on('reconnect', () => {
+      console.log('Socket reconnected');
+      fetchUsers();
+    });
 
     socket.on('location:update', (data) => {
       updateLiveLocation(data.trackedUserId, data);
@@ -55,7 +62,7 @@ export function useSocket() {
       socket.disconnect();
       socketInstance = null;
     };
-  }, [token]);
+  }, [token, fetchUsers]);
 
   return socketRef;
 }

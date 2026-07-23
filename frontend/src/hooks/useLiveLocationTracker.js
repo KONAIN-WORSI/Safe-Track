@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { api, useAuthStore } from '../store';
-import { queueLocation, getQueuedLocations, getQueueCount, clearQueue } from '../utils/locationQueue';
+import { queueLocation, getQueuedLocations, getQueueCount, clearQueue, removeOldest } from '../utils/locationQueue';
 
 export function useLiveLocationTracker() {
   const token = useAuthStore(s => s.token);
@@ -52,7 +52,8 @@ export function useLiveLocationTracker() {
           accuracy: ping.accuracy,
           speed: ping.speed,
           heading: ping.heading,
-          altitude: ping.altitude
+          altitude: ping.altitude,
+          timestamp: ping.timestamp || ping.queuedAt
         };
         socket.emit('location:ping', payload);
         sent++;
@@ -60,9 +61,9 @@ export function useLiveLocationTracker() {
         await new Promise(r => setTimeout(r, 50));
       }
 
-      // Clear only the pings we successfully sent
-      if (sent === queued.length) {
-        await clearQueue();
+      // Remove successfully sent pings from queue
+      if (sent > 0) {
+        await removeOldest(sent);
       }
       await updateQueueCount();
       setStatus('tracking');
