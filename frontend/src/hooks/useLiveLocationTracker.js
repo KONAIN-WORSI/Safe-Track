@@ -129,6 +129,9 @@ export function useLiveLocationTracker() {
     watchIdRef.current = null;
     trackedUserIdRef.current = null;
     trackingTokenRef.current = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('st_device_token');
+    }
     setIsActive(false);
     setStatus('stopped');
     setQueueCount(0);
@@ -139,19 +142,36 @@ export function useLiveLocationTracker() {
   }, [stopTracking]);
 
   const startTracking = useCallback(async (trackedUserId, providedToken = null) => {
-    if (!trackedUserId && !providedToken) return false;
+    let trackingToken = providedToken;
+    if (!trackingToken && typeof window !== 'undefined') {
+      trackingToken = localStorage.getItem('st_device_token');
+    }
 
-    stopTracking();
+    if (!trackedUserId && !trackingToken) return false;
+
+    // Call internal cleanup but do not clear localStorage if we are restoring
+    if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+    if (socketRef.current) {
+      socketRef.current.removeAllListeners();
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+    watchIdRef.current = null;
     trackedUserIdRef.current = trackedUserId;
-    trackingTokenRef.current = providedToken;
+    trackingTokenRef.current = trackingToken;
     setIsActive(true);
     setStatus('requesting-token');
 
     try {
-      let trackingToken = providedToken;
       if (!trackingToken) {
         const { data } = await api.post(`/auth/tracking-token/${trackedUserId}`);
         trackingToken = data.token;
+      }
+
+      if (typeof window !== 'undefined' && trackingToken) {
+        localStorage.setItem('st_device_token', trackingToken);
       }
 
       const socketUrl = import.meta.env.VITE_API_URL || 'https://safe-track-jaf5.onrender.com';
@@ -182,13 +202,6 @@ export function useLiveLocationTracker() {
       socket.on('reconnect_attempt', (attempt) => {
         console.log('Socket reconnecting attempt:', attempt);
         setStatus('reconnecting');
-      });
-
-      socket.on('reconnect', async () => {
-        console.log('Socket reconnected');
-        setStatus('connected');
-        await replayQueue(socket);
-        startGeolocation(trackedUserId, socket);
       });
 
       socket.on('reconnect_failed', () => {

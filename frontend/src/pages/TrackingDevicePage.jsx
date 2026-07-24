@@ -21,7 +21,12 @@ export default function TrackingDevicePage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    const trackingToken = params.get('token');
+    let trackingToken = params.get('token');
+
+    if (!trackingToken) {
+      trackingToken = localStorage.getItem('st_device_token');
+    }
+
     if (trackingToken) {
       setToken(trackingToken);
       const requestLocation = async () => {

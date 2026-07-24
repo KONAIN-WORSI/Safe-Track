@@ -56,47 +56,57 @@ function handleSocketConnection(io) {
           }
         }
 
+        const incomingTimestamp = timestamp ? new Date(timestamp) : new Date();
         const location = await Location.create({
           trackedUser: resolvedTrackedUserId,
           guardian: trackedUser.guardian,
           lat, lng, accuracy, speed, heading, altitude,
           inSafeZone, safeZoneName,
-          timestamp: timestamp ? new Date(timestamp) : new Date()
+          timestamp: incomingTimestamp
         });
 
-        await TrackedUser.findByIdAndUpdate(resolvedTrackedUserId, {
-          lastLocation: { lat, lng, accuracy, timestamp: timestamp ? new Date(timestamp) : new Date() },
-          isTracking: true,
-          inSafeZone,
-          safeZoneName
-        });
+        const shouldUpdateLast = !trackedUser.lastLocation || !trackedUser.lastLocation.timestamp || incomingTimestamp >= new Date(trackedUser.lastLocation.timestamp);
 
-        io.to(`guardian:${trackedUser.guardian}`).emit('location:update', {
-          trackedUserId: resolvedTrackedUserId,
-          location: { lat, lng, accuracy, speed, timestamp: location.timestamp },
-          inSafeZone,
-          safeZoneName
-        });
-
-        if (!inSafeZone && safeZones.length > 0) {
-          const recentAlert = await Alert.findOne({
-            trackedUser: resolvedTrackedUserId,
-            type: 'zone_exit',
-            createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) }
+        if (shouldUpdateLast) {
+          await TrackedUser.findByIdAndUpdate(resolvedTrackedUserId, {
+            lastLocation: { lat, lng, accuracy, timestamp: incomingTimestamp },
+            isTracking: true,
+            inSafeZone,
+            safeZoneName
           });
 
-          if (!recentAlert) {
-            const alert = await Alert.create({
+          io.to(`guardian:${trackedUser.guardian}`).emit('location:update', {
+            trackedUserId: resolvedTrackedUserId,
+            location: { lat, lng, accuracy, speed, timestamp: location.timestamp },
+            inSafeZone,
+            safeZoneName
+          });
+
+          if (!inSafeZone && safeZones.length > 0) {
+            const recentAlert = await Alert.findOne({
               trackedUser: resolvedTrackedUserId,
-              guardian: trackedUser.guardian,
               type: 'zone_exit',
-              severity: 'critical',
-              message: `${trackedUser.name} has left the safe zone!`,
-              location: { lat, lng }
+              createdAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) }
             });
 
-            io.to(`guardian:${trackedUser.guardian}`).emit('alert:new', alert);
+            if (!recentAlert) {
+              const alert = await Alert.create({
+                trackedUser: resolvedTrackedUserId,
+                guardian: trackedUser.guardian,
+                type: 'zone_exit',
+                severity: 'critical',
+                message: `${trackedUser.name} has left the safe zone!`,
+                location: { lat, lng }
+              });
+
+              io.to(`guardian:${trackedUser.guardian}`).emit('alert:new', alert);
+            }
           }
+        } else {
+          // Even if we don't update lastLocation, make sure isTracking is true
+          await TrackedUser.findByIdAndUpdate(resolvedTrackedUserId, {
+            isTracking: true
+          });
         }
       } catch (err) {
         console.error('location:ping error', err);
